@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="bg-white rounded-xl shadow-lg p-8 max-w-lg mx-auto">
+    <div class="flex items-center gap-2 mb-6">
+        <span class="text-2xl">🗺️</span>
+        <h2 class="text-2xl font-bold text-transport-blue">Route Details</h2>
+    </div>
+    <ul class="mb-8 text-base">
+        <li class="mb-2"><strong class="text-gray-700">Name:</strong> <span class="text-transport-blue font-semibold">{{ route.name }}</span></li>
+        <li class="mb-2"><strong class="text-gray-700">Code:</strong> <span class="font-mono bg-gray-100 px-2 py-1 rounded">{{ route.code }}</span></li>
+        <li class="mb-2">
+            <strong class="text-gray-700">Active:</strong>
+            {% if route.active %}
+                <span class="inline-block bg-green-600 text-white px-2 py-1 rounded text-xs ml-1">Yes</span>
+            {% else %}
+                <span class="inline-block bg-red-600 text-white px-2 py-1 rounded text-xs ml-1">No</span>
+            {% endif %}
+        </li>
+        <li class="mb-2"><strong class="text-gray-700">Description:</strong>
+            <span class="text-gray-700">{{ route.description }}</span>
+        </li>
+    </ul>
+    <div class="flex gap-2">
+        <a href="{% url 'dashboard:route-edit' route.pk %}" class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 transition font-semibold">Edit Route</a>
+        <a href="{% url 'dashboard:route-list' %}" class="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400 transition font-semibold">Back to Route List</a>
+    </div>
+</div>
+{% endblock %}

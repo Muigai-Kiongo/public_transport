@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="bg-white rounded-xl shadow p-6 max-w-lg mx-auto">
+    <h2 class="text-2xl font-bold mb-4">Vehicle Details</h2>
+    <ul class="mb-6">
+        <li><strong>Code:</strong> {{ vehicle.code }}</li>
+        <li><strong>Type:</strong> {{ vehicle.get_vehicle_type_display }}</li>
+        <li><strong>Capacity:</strong> {{ vehicle.capacity }}</li>
+        <li><strong>Active:</strong> {% if vehicle.active %}Yes{% else %}No{% endif %}</li>
+    </ul>
+    <a href="{% url 'dashboard:vehicle-edit' vehicle.pk %}" class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 mr-2">Edit Vehicle</a>
+    <a href="{% url 'dashboard:vehicle-list' %}" class="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400">Back to Vehicle List</a>
+</div>
+{% endblock %}

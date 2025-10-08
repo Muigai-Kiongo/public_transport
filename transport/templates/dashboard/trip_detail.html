@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="bg-white rounded-xl shadow p-6 max-w-lg mx-auto">
+    <h2 class="text-2xl font-bold mb-4">Trip Details</h2>
+    <ul class="mb-6">
+        <li><strong>Route:</strong> {{ trip.route.name }}</li>
+        <li><strong>Vehicle:</strong> {{ trip.vehicle.code }}</li>
+        <li><strong>Departure:</strong> {{ trip.scheduled_departure|date:"Y-m-d H:i" }}</li>
+        <li><strong>Arrival:</strong> {{ trip.scheduled_arrival|date:"Y-m-d H:i" }}</li>
+        <li><strong>Available Seats:</strong> {{ trip.available_seats }}</li>
+    </ul>
+    <a href="{% url 'dashboard:trip-edit' trip.pk %}" class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 mr-2">Edit Trip</a>
+    <a href="{% url 'dashboard:trip-list' %}" class="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400">Back to Trip List</a>
+</div>
+{% endblock %}

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Public Transport Efficiency Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Custom Tailwind theme for public transport -->
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              transport: {
+                blue: '#2563eb',
+                yellow: '#ffd600',
+                green: '#2dcf7b',
+                red: '#ef4444',
+                gray: '#f3f4f6',
+              }
+            },
+            fontFamily: {
+              sans: ['Inter', 'Segoe UI', 'Arial', 'sans-serif'],
+              display: ['Montserrat', 'Lato', 'sans-serif'],
+            }
+          }
+        }
+      }
+    </script>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-transport-gray min-h-screen font-sans">
+    <!-- Header with transport icons -->
+    <nav class="fixed top-0 left-0 right-0 z-30 bg-transport-blue text-white h-16 flex items-center px-6 shadow">
+        <div class="flex-1 flex items-center">
+            <span class="mr-4 text-3xl font-display">
+                🚍 🚆
+            </span>
+            <a class="font-bold text-2xl tracking-wide font-display mr-8 hover:text-transport-yellow transition" href="{% url 'dashboard:dashboard' %}">
+                Transport Dashboard
+            </a>
+            {% if user.is_authenticated %}
+                <a href="{% url 'dashboard:analytics' %}" class="ml-4 hover:text-transport-yellow font-semibold transition">Analytics</a>
+            {% endif %}
+        </div>
+        <div>
+            <ul class="flex space-x-4 items-center">
+                {% if user.is_authenticated %}
+                    <li>
+                        <span class="text-transport-yellow font-semibold tracking-wide">Hello, {{ user.username }}</span>
+                    </li>
+                    <li>
+                        <form action="{% url 'logout' %}" method="post">
+                            {% csrf_token %}
+                            <button type="submit" class="hover:text-transport-yellow font-semibold transition">Logout</button>
+                        </form>
+                    </li>
+                {% else %}
+                    <li>
+                        <a href="{% url 'login' %}" class="hover:text-transport-yellow font-semibold transition">Login</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Fixed aside nav with transport theme accent -->
+    <aside class="fixed top-16 left-0 h-[calc(100vh-4rem)] w-64 bg-white shadow-lg flex flex-col z-20 border-r border-transport-blue">
+        <div class="flex items-center px-6 py-4 bg-transport-blue text-transport-yellow font-display text-lg tracking-wide">
+            <span class="mr-2">🚌</span> Public Transport
+        </div>
+        <a href="{% url 'dashboard:dashboard' %}" class="py-3 px-6 hover:bg-transport-blue hover:text-white border-b font-medium transition">Dashboard</a>
+        <a href="{% url 'dashboard:vehicle-list' %}" class="py-3 px-6 hover:bg-transport-blue hover:text-white border-b font-medium transition">Vehicles</a>
+        <a href="{% url 'dashboard:route-list' %}" class="py-3 px-6 hover:bg-transport-blue hover:text-white border-b font-medium transition">Routes</a>
+        <a href="{% url 'dashboard:trip-list' %}" class="py-3 px-6 hover:bg-transport-blue hover:text-white border-b font-medium transition">Trips</a>
+        <a href="{% url 'dashboard:feedback-create' %}" class="py-3 px-6 hover:bg-transport-blue hover:text-white border-b font-medium transition">Submit Feedback</a>
+        {% if user.is_authenticated %}
+            <a href="{% url 'dashboard:booking-list' %}" class="py-3 px-6 hover:bg-transport-blue hover:text-white border-b font-medium transition">Bookings</a>
+            <a href="{% url 'dashboard:feedback-list' %}" class="py-3 px-6 hover:bg-transport-blue hover:text-white border-b font-medium transition">Manage Feedback</a>
+        {% endif %}
+        <div class="mt-auto px-6 py-3 text-xs text-gray-400">
+            <span class="mr-2">🚏</span> Powered by Django & Tailwind
+        </div>
+    </aside>
+
+    <!-- Main content area with themed background -->
+    <main class="ml-64 pt-20 px-8 pb-10 transition-all bg-transport-gray min-h-[calc(100vh-4rem)]">
+        <div class="max-w-6xl mx-auto">
+            {% block content %}
+            {% endblock %}
+        </div>
+    </main>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

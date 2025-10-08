@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="flex items-center gap-2 mb-6">
+    <span class="text-3xl">🚗🚍🚆</span>
+    <h2 class="text-2xl font-bold text-transport-blue">Vehicles</h2>
+</div>
+<div class="bg-white rounded-xl shadow-lg p-6">
+    <a href="{% url 'dashboard:vehicle-add' %}" class="mb-4 inline-block bg-transport-blue text-white px-4 py-2 rounded hover:bg-blue-700 transition font-semibold">
+        <span class="mr-2">➕</span>Add Vehicle
+    </a>
+    <div class="overflow-x-auto mt-4">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700">Code</th>
+                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700">Type</th>
+                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700">Capacity</th>
+                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700">Active</th>
+                    <th class="px-4 py-2"></th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-100">
+                {% for vehicle in vehicles %}
+                <tr>
+                    <td class="px-4 py-2 font-mono">{{ vehicle.code }}</td>
+                    <td class="px-4 py-2">
+                        {% if vehicle.vehicle_type == "bus" %}
+                            <span class="inline-block bg-transport-yellow text-black px-2 py-1 rounded text-xs font-semibold">🚌 Bus</span>
+                        {% elif vehicle.vehicle_type == "train" %}
+                            <span class="inline-block bg-transport-green text-white px-2 py-1 rounded text-xs font-semibold">🚆 Train</span>
+                        {% else %}
+                            {{ vehicle.get_vehicle_type_display }}
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-2">{{ vehicle.capacity }}</td>
+                    <td class="px-4 py-2">
+                        {% if vehicle.active %}
+                            <span class="inline-block bg-green-600 text-white px-2 py-1 rounded text-xs">Yes</span>
+                        {% else %}
+                            <span class="inline-block bg-red-600 text-white px-2 py-1 rounded text-xs">No</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-2 whitespace-nowrap">
+                        <a href="{% url 'dashboard:vehicle-detail' vehicle.pk %}" class="text-blue-600 hover:underline mr-2">View</a>
+                        <a href="{% url 'dashboard:vehicle-edit' vehicle.pk %}" class="text-yellow-600 hover:underline mr-2">Edit</a>
+                        <a href="{% url 'dashboard:vehicle-delete' vehicle.pk %}" class="text-red-600 hover:underline">Delete</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="px-4 py-4 text-center text-gray-500">No vehicles found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

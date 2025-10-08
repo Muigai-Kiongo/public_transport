@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="bg-white rounded-xl shadow p-6 max-w-lg mx-auto">
+    <h2 class="text-2xl font-bold mb-4 flex items-center gap-2">
+        <span class="text-blue-600">{% if form.instance.pk %}Edit{% else %}Add{% endif %} Trip</span>
+        <span class="text-2xl">🗓️</span>
+    </h2>
+    <form method="post" class="space-y-4">
+        {% csrf_token %}
+        {% for field in form %}
+            <div>
+                <label for="{{ field.id_for_label }}" class="block font-medium text-gray-700 mb-1">
+                    {{ field.label }}
+                    {% if field.name == "scheduled_departure" or field.name == "scheduled_arrival" %}
+                        <span class="ml-2 text-blue-500 text-sm">📅</span>
+                    {% endif %}
+                </label>
+                {# Use a specific input type for date/time fields #}
+                {% if field.name == "scheduled_departure" or field.name == "scheduled_arrival" %}
+                    <input
+                        type="datetime-local"
+                        name="{{ field.html_name }}"
+                        id="{{ field.id_for_label }}"
+                        value="{{ field.value|default_if_none:'' }}"
+                        class="bg-gray-50 border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
+                    >
+                {% else %}
+                    {{ field }}
+                {% endif %}
+                {% if field.errors %}
+                    <div class="text-red-600 text-xs mt-1">{{ field.errors }}</div>
+                {% endif %}
+            </div>
+        {% endfor %}
+        <button type="submit" class="w-full py-3 bg-blue-600 text-white rounded font-bold hover:bg-blue-700 transition">
+            {% if form.instance.pk %}Update{% else %}Add{% endif %}
+        </button>
+        <a href="{% url 'dashboard:trip-list' %}" class="block mt-2 text-center text-gray-600 hover:underline">Cancel</a>
+    </form>
+</div>
+{% endblock %}

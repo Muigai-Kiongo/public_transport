@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="flex items-center mb-6 gap-2">
+    <span class="text-3xl">🚍</span>
+    <h2 class="text-2xl font-bold text-transport-blue">Live Trips & Routes</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+    <!-- Left: Trips Table -->
+    <div class="md:col-span-2">
+        <div class="overflow-x-auto rounded shadow bg-white">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700">Route</th>
+                        <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700">Vehicle</th>
+                        <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700">Departure</th>
+                        <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700">Arrival</th>
+                        <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-100">
+                    {% for trip in trips %}
+                    <tr>
+                        <td class="px-4 py-2">{{ trip.route.name }}</td>
+                        <td class="px-4 py-2">{{ trip.vehicle.code }}</td>
+                        <td class="px-4 py-2">{{ trip.scheduled_departure|date:"Y-m-d H:i" }}</td>
+                        <td class="px-4 py-2">{{ trip.scheduled_arrival|date:"Y-m-d H:i" }}</td>
+                        <td class="px-4 py-2">
+                            {% if trip.actual_arrival %}
+                                {% if trip.actual_arrival > trip.scheduled_arrival %}
+                                    <span class="inline-block px-2 py-1 rounded bg-red-600 text-white text-xs">Delayed</span>
+                                {% else %}
+                                    <span class="inline-block px-2 py-1 rounded bg-green-600 text-white text-xs">On time</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="inline-block px-2 py-1 rounded bg-yellow-400 text-black text-xs">In Progress</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="px-4 py-4 text-center text-gray-500">No trips available.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <!-- Right: Feedback -->
+    <div>
+        <div class="bg-white rounded shadow p-4">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="text-xl">🎫</span>
+                <h4 class="text-lg font-semibold text-transport-blue">Submit Feedback</h4>
+            </div>
+            <a class="inline-block mb-3 px-4 py-2 bg-transport-blue text-white rounded hover:bg-blue-700 transition" href="{% url 'dashboard:feedback-create' %}">
+                Report Issue / Feedback
+            </a>
+            <div class="border-t border-gray-200 my-3"></div>
+            <h5 class="font-semibold mb-2 text-gray-700">Recent Feedback</h5>
+            <ul>
+                {% for fb in feedbacks %}
+                <li class="mb-4 border-b pb-2">
+                    <span class="font-bold px-2 py-1 rounded 
+                        {% if fb.category == 'delay' %}bg-red-100 text-red-700
+                        {% elif fb.category == 'comfort' %}bg-green-100 text-green-700
+                        {% elif fb.category == 'cleanliness' %}bg-yellow-100 text-yellow-800
+                        {% else %}bg-blue-100 text-blue-700{% endif %}
+                    ">
+                        {{ fb.get_category_display }}
+                    </span>
+                    {% if fb.route %} on <span class="text-gray-800">{{ fb.route.name }}</span>{% endif %}
+                    <div class="text-gray-700 mt-1 text-sm">{{ fb.description|truncatechars:80 }}</div>
+                    <small class="block text-gray-400 mt-1">
+                        By
+                        {% if fb.user %}
+                            {{ fb.user.username }}
+                        {% else %}
+                            Anonymous
+                        {% endif %}
+                        at {{ fb.submitted_at|date:"Y-m-d H:i" }}
+                    </small>
+                </li>
+                {% empty %}
+                <li class="text-gray-500">No feedback yet.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="flex items-center gap-2 mb-6">
+    <span class="text-3xl">📊</span>
+    <h2 class="text-2xl font-bold text-transport-blue">Analytics</h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <div class="bg-white rounded-xl shadow-lg p-6">
+        <div class="flex items-center gap-2 mb-4">
+            <span class="text-xl">🚌</span>
+            <h4 class="text-lg font-semibold text-blue-700">Average Delays by Route</h4>
+        </div>
+        <canvas id="delayChart" width="400" height="300" aria-label="Average Delay Chart"></canvas>
+    </div>
+    <div class="bg-white rounded-xl shadow-lg p-6">
+        <div class="flex items-center gap-2 mb-4">
+            <span class="text-xl">📝</span>
+            <h4 class="text-lg font-semibold text-blue-700">Feedback by Category</h4>
+        </div>
+        <canvas id="feedbackChart" width="400" height="300" aria-label="Feedback Chart"></canvas>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Example: Using Django context data for charts
+    const delayData = {
+        labels: [{% for d in avg_delays %}"{{ d.route__name }}"{% if not forloop.last %},{% endif %}{% endfor %}],
+        datasets: [{
+            label: 'Avg Delay (seconds)',
+            data: [{% for d in avg_delays %}{{ d.avg_delay|floatformat:0 }}{% if not forloop.last %},{% endif %}{% endfor %}],
+            backgroundColor: 'rgba(255,99,132,0.6)'
+        }]
+    };
+    new Chart(document.getElementById('delayChart'), {
+        type: 'bar',
+        data: delayData,
+        options: {
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+
+    const feedbackData = {
+        labels: [{% for f in feedback_stats %}"{{ f.category }}"{% if not forloop.last %},{% endif %}{% endfor %}],
+        datasets: [{
+            label: 'Feedback Count',
+            data: [{% for f in feedback_stats %}{{ f.count }}{% if not forloop.last %},{% endif %}{% endfor %}],
+            backgroundColor: [
+                'rgba(54,162,235,0.6)',
+                'rgba(255,206,86,0.6)',
+                'rgba(75,192,192,0.6)',
+                'rgba(255,99,132,0.6)'
+            ]
+        }]
+    };
+    new Chart(document.getElementById('feedbackChart'), {
+        type: 'pie',
+        data: feedbackData,
+        options: {
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+</script>
+{% endblock %}

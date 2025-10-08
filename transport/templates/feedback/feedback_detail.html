@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="bg-white rounded-xl shadow p-6 max-w-lg mx-auto">
+    <h2 class="text-2xl font-bold mb-4">Feedback Details</h2>
+    <ul class="mb-6">
+        <li><strong>ID:</strong> {{ feedback.id }}</li>
+        <li><strong>User:</strong> {% if feedback.user %}{{ feedback.user.username }}{% else %}Anonymous{% endif %}</li>
+        <li><strong>Route:</strong> {% if feedback.route %}{{ feedback.route.name }}{% else %}-{% endif %}</li>
+        <li><strong>Trip:</strong> {% if feedback.trip %}{{ feedback.trip.id }}{% else %}-{% endif %}</li>
+        <li><strong>Category:</strong> {{ feedback.get_category_display }}</li>
+        <li><strong>Submitted At:</strong> {{ feedback.submitted_at|date:"Y-m-d H:i" }}</li>
+        <li><strong>Status:</strong> {% if feedback.resolved %}Resolved{% else %}Open{% endif %}</li>
+        <li><strong>Description:</strong> {{ feedback.description }}</li>
+    </ul>
+    <a href="{% url 'dashboard:feedback-update' feedback.pk %}" class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 mr-2">Mark as Resolved</a>
+    <a href="{% url 'dashboard:feedback-list' %}" class="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400">Back to Feedback List</a>
+</div>
+{% endblock %}
