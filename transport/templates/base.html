@@ -40,7 +40,7 @@
             <a class="font-bold text-2xl tracking-wide font-display mr-8 hover:text-transport-yellow transition" href="{% url 'dashboard:dashboard' %}">
                 Transport Dashboard
             </a>
-            {% if user.is_authenticated %}
+            {% if user.is_authenticated and user.is_staff %}
                 <a href="{% url 'dashboard:analytics' %}" class="ml-4 hover:text-transport-yellow font-semibold transition">Analytics</a>
             {% endif %}
         </div>
@@ -75,8 +75,17 @@
         <a href="{% url 'dashboard:route-list' %}" class="py-3 px-6 hover:bg-transport-blue hover:text-white border-b font-medium transition">Routes</a>
         <a href="{% url 'dashboard:trip-list' %}" class="py-3 px-6 hover:bg-transport-blue hover:text-white border-b font-medium transition">Trips</a>
         <a href="{% url 'dashboard:feedback-create' %}" class="py-3 px-6 hover:bg-transport-blue hover:text-white border-b font-medium transition">Submit Feedback</a>
-        {% if user.is_authenticated %}
-            <a href="{% url 'dashboard:booking-list' %}" class="py-3 px-6 hover:bg-transport-blue hover:text-white border-b font-medium transition">Bookings</a>
+        
+        {% if user.is_authenticated and not user.is_staff %}
+            <!-- Passenger Dashboard -->
+            <a href="{% url 'dashboard:booking-list' %}" class="py-3 px-6 hover:bg-transport-blue hover:text-white border-b font-medium transition">My Bookings</a>
+        {% endif %}
+        
+        {% if user.is_authenticated and user.is_staff %}
+            <!-- Staff-only links -->
+            <a href="{% url 'dashboard:vehicle-add' %}" class="py-3 px-6 hover:bg-transport-blue hover:text-white border-b font-medium transition">Add Vehicle</a>
+            <a href="{% url 'dashboard:trip-add' %}" class="py-3 px-6 hover:bg-transport-blue hover:text-white border-b font-medium transition">Add Trip</a>
+            <a href="{% url 'dashboard:route-add' %}" class="py-3 px-6 hover:bg-transport-blue hover:text-white border-b font-medium transition">Add Route</a>
             <a href="{% url 'dashboard:feedback-list' %}" class="py-3 px-6 hover:bg-transport-blue hover:text-white border-b font-medium transition">Manage Feedback</a>
         {% endif %}
         <div class="mt-auto px-6 py-3 text-xs text-gray-400">

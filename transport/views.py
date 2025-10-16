@@ -6,22 +6,24 @@ from django.urls import reverse_lazy
 from django.shortcuts import redirect
 from .models import Trip, Feedback, Route, Vehicle, Booking
 from .forms import FeedbackForm
-from django.db import models
 
 # --- Permission Mixins ---
 class StaffRequiredMixin(UserPassesTestMixin):
     def test_func(self):
         return self.request.user.is_authenticated and self.request.user.is_staff
 
+class PassengerRequiredMixin(UserPassesTestMixin, LoginRequiredMixin):
+    def test_func(self):
+        return self.request.user.is_authenticated and not self.request.user.is_staff
+
 # --- Home/Dashboard ---
-class DashboardView(ListView):
+class DashboardView(LoginRequiredMixin, ListView):
     model = Trip
     template_name = 'dashboard/dashboard.html'
     context_object_name = 'trips'
     paginate_by = 20
 
     def get_queryset(self):
-        # Show upcoming and ongoing trips, ordered by scheduled_departure
         return Trip.objects.order_by('-scheduled_departure')[:20]
 
     def get_context_data(self, **kwargs):
@@ -32,7 +34,7 @@ class DashboardView(ListView):
         return context
 
 # --- Analytics (staff only) ---
-class AnalyticsView(StaffRequiredMixin, LoginRequiredMixin, TemplateView):
+class AnalyticsView(StaffRequiredMixin, TemplateView):
     template_name = 'dashboard/analytics.html'
 
     def get_context_data(self, **kwargs):
@@ -67,8 +69,7 @@ class FeedbackCreateView(LoginRequiredMixin, CreateView):
     success_url = reverse_lazy('dashboard:dashboard')
 
     def form_valid(self, form):
-        if self.request.user.is_authenticated:
-            form.instance.user = self.request.user
+        form.instance.user = self.request.user
         return super().form_valid(form)
 
 class FeedbackListView(StaffRequiredMixin, ListView):
@@ -83,7 +84,7 @@ class FeedbackUpdateView(StaffRequiredMixin, UpdateView):
     template_name = 'feedback/feedback_update.html'
     success_url = reverse_lazy('dashboard:feedback-list')
 
-# --- Vehicle CRUD (staff only for create/update/delete) ---
+# --- Vehicle Views ---
 class VehicleListView(LoginRequiredMixin, ListView):
     model = Vehicle
     template_name = 'dashboard/vehicle_list.html'
@@ -94,6 +95,7 @@ class VehicleDetailView(LoginRequiredMixin, DetailView):
     template_name = 'dashboard/vehicle_detail.html'
     context_object_name = 'vehicle'
 
+# Staff only for add/update/delete
 class VehicleCreateView(StaffRequiredMixin, CreateView):
     model = Vehicle
     fields = ['code', 'vehicle_type', 'capacity', 'active', 'assigned_routes']
@@ -111,7 +113,7 @@ class VehicleDeleteView(StaffRequiredMixin, DeleteView):
     template_name = 'dashboard/vehicle_confirm_delete.html'
     success_url = reverse_lazy('dashboard:vehicle-list')
 
-# --- Trip CRUD (staff only for create/update/delete) ---
+# --- Trip Views ---
 class TripListView(LoginRequiredMixin, ListView):
     model = Trip
     template_name = 'dashboard/trip_list.html'
@@ -122,6 +124,7 @@ class TripDetailView(LoginRequiredMixin, DetailView):
     template_name = 'dashboard/trip_detail.html'
     context_object_name = 'trip'
 
+# Staff only for add/update/delete
 class TripCreateView(StaffRequiredMixin, CreateView):
     model = Trip
     fields = ['route', 'vehicle', 'scheduled_departure', 'scheduled_arrival', 'timetable', 'available_seats']
@@ -139,7 +142,7 @@ class TripDeleteView(StaffRequiredMixin, DeleteView):
     template_name = 'dashboard/trip_confirm_delete.html'
     success_url = reverse_lazy('dashboard:trip-list')
 
-# --- Route CRUD (staff only for create/update/delete) ---
+# --- Route Views ---
 class RouteListView(LoginRequiredMixin, ListView):
     model = Route
     template_name = 'dashboard/route_list.html'
@@ -150,6 +153,7 @@ class RouteDetailView(LoginRequiredMixin, DetailView):
     template_name = 'dashboard/route_detail.html'
     context_object_name = 'route'
 
+# Staff only for add/update/delete
 class RouteCreateView(StaffRequiredMixin, CreateView):
     model = Route
     fields = ['name', 'code', 'description', 'active']
@@ -167,8 +171,8 @@ class RouteDeleteView(StaffRequiredMixin, DeleteView):
     template_name = 'dashboard/route_confirm_delete.html'
     success_url = reverse_lazy('dashboard:route-list')
 
-# --- Booking CRUD (all authenticated users) ---
-class BookingListView(LoginRequiredMixin, ListView):
+# --- Booking Views (passenger only) ---
+class BookingListView(PassengerRequiredMixin, ListView):
     model = Booking
     template_name = 'dashboard/booking_list.html'
     context_object_name = 'bookings'
@@ -176,7 +180,7 @@ class BookingListView(LoginRequiredMixin, ListView):
     def get_queryset(self):
         return Booking.objects.filter(user=self.request.user)
 
-class BookingDetailView(LoginRequiredMixin, DetailView):
+class BookingDetailView(PassengerRequiredMixin, DetailView):
     model = Booking
     template_name = 'dashboard/booking_detail.html'
     context_object_name = 'booking'
@@ -184,7 +188,7 @@ class BookingDetailView(LoginRequiredMixin, DetailView):
     def get_queryset(self):
         return Booking.objects.filter(user=self.request.user)
 
-class BookingCreateView(LoginRequiredMixin, CreateView):
+class BookingCreateView(PassengerRequiredMixin, CreateView):
     model = Booking
     fields = ['trip']
     template_name = 'dashboard/booking_form.html'
@@ -194,7 +198,7 @@ class BookingCreateView(LoginRequiredMixin, CreateView):
         form.instance.user = self.request.user
         return super().form_valid(form)
 
-class BookingUpdateView(LoginRequiredMixin, UpdateView):
+class BookingUpdateView(PassengerRequiredMixin, UpdateView):
     model = Booking
     fields = ['status']
     template_name = 'dashboard/booking_form.html'
@@ -203,7 +207,7 @@ class BookingUpdateView(LoginRequiredMixin, UpdateView):
     def get_queryset(self):
         return Booking.objects.filter(user=self.request.user)
 
-class BookingDeleteView(LoginRequiredMixin, DeleteView):
+class BookingDeleteView(PassengerRequiredMixin, DeleteView):
     model = Booking
     template_name = 'dashboard/booking_confirm_delete.html'
     success_url = reverse_lazy('dashboard:booking-list')

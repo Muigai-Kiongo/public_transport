@@ -5,9 +5,11 @@
     <h2 class="text-2xl font-bold text-transport-blue">Trips</h2>
 </div>
 <div class="bg-white rounded-xl shadow-lg p-6">
+    {% if user.is_authenticated and user.is_staff %}
     <a href="{% url 'dashboard:trip-add' %}" class="mb-4 inline-block bg-transport-blue text-white px-4 py-2 rounded hover:bg-blue-700 transition font-semibold">
         <span class="mr-2">➕</span>Add Trip
     </a>
+    {% endif %}
     <div class="overflow-x-auto mt-4">
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
@@ -30,8 +32,13 @@
                     <td class="px-4 py-2">{{ trip.available_seats }}</td>
                     <td class="px-4 py-2 whitespace-nowrap">
                         <a href="{% url 'dashboard:trip-detail' trip.pk %}" class="text-blue-600 hover:underline mr-2">View</a>
-                        <a href="{% url 'dashboard:trip-edit' trip.pk %}" class="text-yellow-600 hover:underline mr-2">Edit</a>
-                        <a href="{% url 'dashboard:trip-delete' trip.pk %}" class="text-red-600 hover:underline">Delete</a>
+                        {% if user.is_authenticated and user.is_staff %}
+                            <a href="{% url 'dashboard:trip-edit' trip.pk %}" class="text-yellow-600 hover:underline mr-2">Edit</a>
+                            <a href="{% url 'dashboard:trip-delete' trip.pk %}" class="text-red-600 hover:underline">Delete</a>
+                        {% endif %}
+                        {% if user.is_authenticated and not user.is_staff %}
+                            <a href="{% url 'dashboard:booking-add' %}?trip={{ trip.pk }}" class="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition font-semibold">Book</a>
+                        {% endif %}
                     </td>
                 </tr>
                 {% empty %}

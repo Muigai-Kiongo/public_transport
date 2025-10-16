@@ -16,6 +16,9 @@
                         <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700">Departure</th>
                         <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700">Arrival</th>
                         <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700">Status</th>
+                        {% if user.is_authenticated and not user.is_staff %}
+                        <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700">Action</th>
+                        {% endif %}
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-100">
@@ -36,10 +39,16 @@
                                 <span class="inline-block px-2 py-1 rounded bg-yellow-400 text-black text-xs">In Progress</span>
                             {% endif %}
                         </td>
+                        {% if user.is_authenticated and not user.is_staff %}
+                        <td class="px-4 py-2 whitespace-nowrap">
+                            <a href="{% url 'dashboard:trip-detail' trip.pk %}" class="text-blue-600 hover:underline mr-2">Details</a>
+                            <a href="{% url 'dashboard:booking-add' %}?trip={{ trip.pk }}" class="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition font-semibold">Book</a>
+                        </td>
+                        {% endif %}
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="5" class="px-4 py-4 text-center text-gray-500">No trips available.</td>
+                        <td colspan="{% if user.is_authenticated and not user.is_staff %}6{% else %}5{% endif %}" class="px-4 py-4 text-center text-gray-500">No trips available.</td>
                     </tr>
                     {% endfor %}
                 </tbody>

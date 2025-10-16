@@ -5,9 +5,11 @@
     <h2 class="text-2xl font-bold text-transport-blue">Vehicles</h2>
 </div>
 <div class="bg-white rounded-xl shadow-lg p-6">
+    {% if user.is_authenticated and user.is_staff %}
     <a href="{% url 'dashboard:vehicle-add' %}" class="mb-4 inline-block bg-transport-blue text-white px-4 py-2 rounded hover:bg-blue-700 transition font-semibold">
         <span class="mr-2">➕</span>Add Vehicle
     </a>
+    {% endif %}
     <div class="overflow-x-auto mt-4">
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
@@ -42,8 +44,10 @@
                     </td>
                     <td class="px-4 py-2 whitespace-nowrap">
                         <a href="{% url 'dashboard:vehicle-detail' vehicle.pk %}" class="text-blue-600 hover:underline mr-2">View</a>
-                        <a href="{% url 'dashboard:vehicle-edit' vehicle.pk %}" class="text-yellow-600 hover:underline mr-2">Edit</a>
-                        <a href="{% url 'dashboard:vehicle-delete' vehicle.pk %}" class="text-red-600 hover:underline">Delete</a>
+                        {% if user.is_authenticated and user.is_staff %}
+                            <a href="{% url 'dashboard:vehicle-edit' vehicle.pk %}" class="text-yellow-600 hover:underline mr-2">Edit</a>
+                            <a href="{% url 'dashboard:vehicle-delete' vehicle.pk %}" class="text-red-600 hover:underline">Delete</a>
+                        {% endif %}
                     </td>
                 </tr>
                 {% empty %}
