@@ -1,15 +1,210 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="bg-white rounded-xl shadow p-6 max-w-lg mx-auto">
-    <h2 class="text-2xl font-bold mb-4">Trip Details</h2>
-    <ul class="mb-6">
-        <li><strong>Route:</strong> {{ trip.route.name }}</li>
-        <li><strong>Vehicle:</strong> {{ trip.vehicle.code }}</li>
+<div class="bg-white rounded-xl shadow p-6 max-w-3xl mx-auto">
+  <div class="flex items-start justify-between gap-6">
+    <div>
+      <h2 class="text-2xl font-bold mb-1 text-transport-blue">Trip Details</h2>
+      <p class="text-sm text-gray-500 mb-4">Trip #{{ trip.pk }}</p>
+
+      <ul class="mb-4 space-y-2 text-sm text-gray-800">
+        <li><strong>Route:</strong>
+          <a href="{% url 'dashboard:route-detail' trip.route.pk %}" class="text-transport-blue hover:underline">
+            {{ trip.route.name }} <span class="text-xs text-gray-500">({{ trip.route.code }})</span>
+          </a>
+        </li>
+
+        <li><strong>Vehicle:</strong>
+          {% if trip.vehicle %}
+            <a href="{% url 'dashboard:vehicle-detail' trip.vehicle.pk %}" class="text-transport-blue hover:underline">
+              {{ trip.vehicle.code }} <span class="text-xs text-gray-500">{{ trip.vehicle.get_vehicle_type_display }}</span>
+            </a>
+          {% else %}
+            <span class="text-gray-500">Unassigned</span>
+          {% endif %}
+        </li>
+
         <li><strong>Departure:</strong> {{ trip.scheduled_departure|date:"Y-m-d H:i" }}</li>
         <li><strong>Arrival:</strong> {{ trip.scheduled_arrival|date:"Y-m-d H:i" }}</li>
-        <li><strong>Available Seats:</strong> {{ trip.available_seats }}</li>
-    </ul>
-    <a href="{% url 'dashboard:trip-edit' trip.pk %}" class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 mr-2">Edit Trip</a>
-    <a href="{% url 'dashboard:trip-list' %}" class="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400">Back to Trip List</a>
+      </ul>
+
+      <div class="mb-4">
+        <div class="flex items-center justify-between mb-2">
+          <div class="text-sm text-gray-700">
+            <strong class="text-lg">{{ trip.available_seats }}</strong>
+            <span class="text-xs text-gray-500">available</span>
+            {% if trip.vehicle and trip.vehicle.capacity %}
+              <span class="text-xs text-gray-400"> / {{ trip.vehicle.capacity }}</span>
+            {% endif %}
+          </div>
+
+          {% if trip.available_seats == 0 %}
+            <span class="inline-block bg-red-100 text-red-700 text-xs px-2 py-1 rounded">Sold out</span>
+          {% elif trip.available_seats <= 5 %}
+            <span class="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">Few left</span>
+          {% else %}
+            <span class="inline-block bg-green-50 text-green-800 text-xs px-2 py-1 rounded">Available</span>
+          {% endif %}
+        </div>
+
+        {% if trip.vehicle and trip.vehicle.capacity %}
+          <div class="w-full bg-gray-100 rounded h-2 overflow-hidden mb-1" aria-hidden="true">
+            <div
+              class="h-2 bg-transport-blue"
+              style="width: {% widthratio trip.available_seats trip.vehicle.capacity 100 %}%;"
+            ></div>
+          </div>
+        {% endif %}
+
+        <p class="text-xs text-gray-500">Availability is updated in real time — booking will reserve a seat.</p>
+      </div>
+
+      <div class="flex items-center gap-3">
+        {% if user.is_authenticated and not user.is_staff %}
+          <a href="{% url 'dashboard:booking-add' %}?trip={{ trip.pk }}" class="inline-block bg-transport-blue text-white px-4 py-2 rounded hover:bg-blue-700 transition font-semibold">
+            Book This Trip
+          </a>
+        {% endif %}
+
+        {% if user.is_authenticated and user.is_staff %}
+          <a href="{% url 'dashboard:trip-edit' trip.pk %}" class="inline-block bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600">Edit Trip</a>
+          <a href="{% url 'dashboard:trip-delete' trip.pk %}" class="inline-block bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700" id="trip-delete-link">Delete</a>
+        {% endif %}
+
+        <a href="{% url 'dashboard:trip-list' %}" class="inline-block bg-gray-100 text-gray-800 px-4 py-2 rounded hover:bg-gray-200">Back to Trips</a>
+      </div>
+    </div>
+
+    <!-- Right column: quick ticket preview / small details -->
+    <aside class="w-48 hidden md:block">
+      <div class="bg-gray-50 border border-gray-100 rounded-lg p-3 text-center">
+        <div class="mb-3">
+          <strong class="text-sm block text-gray-600">Quick Info</strong>
+          <div class="text-xs text-gray-500">Trip #{{ trip.pk }}</div>
+        </div>
+
+        <div class="text-sm text-gray-700 mb-2">
+          <div><strong>Depart</strong></div>
+          <div class="mt-1">{{ trip.scheduled_departure|date:"Y-m-d H:i" }}</div>
+        </div>
+
+        <div class="text-xs text-gray-500">
+          <div>Vehicle</div>
+          <div class="font-medium">
+            {% if trip.vehicle %}
+              {{ trip.vehicle.code }}
+            {% else %}
+              —
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Seat snapshot (client-rendered). The view may provide booked_seats_json & vehicle_capacity in context.
+       If not present, JS will fetch from the seat-map JSON endpoint. -->
+  <div class="mt-6 bg-white border border-gray-100 rounded-lg p-4">
+    <h3 class="text-sm font-semibold text-gray-700 mb-2">Seat snapshot</h3>
+    <p class="text-xs text-gray-500 mb-3">Visual guide to currently booked seats. This is a snapshot — booking will perform final validation.</p>
+
+    <div id="trip-seat-map"
+         class="grid gap-2 p-3 bg-gray-50 rounded"
+         data-trip="{{ trip.pk }}"
+         data-capacity="{{ vehicle_capacity|default:trip.vehicle.capacity|default:0 }}"
+         data-booked='{{ booked_seats_json|default:"[]"|escapejs }}'>
+      <div class="text-xs text-gray-500">Loading seat map…</div>
+    </div>
+  </div>
 </div>
+
+{% block extra_js %}
+<script>
+(function () {
+  // Confirm delete for staff
+  const delLink = document.getElementById('trip-delete-link');
+  if (delLink) {
+    delLink.addEventListener('click', function (e) {
+      if (!confirm('Delete this trip? This action cannot be undone.')) {
+        e.preventDefault();
+      }
+    });
+  }
+
+  // Seat snapshot rendering: tries to use embedded JSON (data-booked), otherwise fetches the seat-map endpoint
+  const container = document.getElementById('trip-seat-map');
+  if (!container) return;
+
+  const tripId = container.dataset.trip;
+  const capacityAttr = container.dataset.capacity || '0';
+  const capacity = parseInt(capacityAttr, 10) || 0;
+  const rawBooked = container.dataset.booked || '[]';
+
+  function render(cap, booked, mySeat) {
+    container.innerHTML = '';
+    if (!cap || cap <= 0) {
+      container.innerHTML = '<div class="text-sm text-gray-500">No seat map available for this vehicle.</div>';
+      return;
+    }
+
+    const cols = Math.min(8, Math.max(4, Math.ceil(Math.sqrt(cap))));
+    container.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
+
+    for (let i = 1; i <= cap; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'text-xs p-2 rounded border flex flex-col items-center justify-center';
+      cell.style.minHeight = '44px';
+
+      const label = document.createElement('div');
+      label.className = 'font-semibold';
+      label.textContent = '#' + i;
+
+      const small = document.createElement('div');
+      small.className = 'text-[10px] mt-1';
+
+      if (booked.includes(i) && mySeat !== i) {
+        cell.classList.add('bg-red-50', 'text-red-700', 'border-red-200');
+        small.textContent = 'Booked';
+      } else if (mySeat === i) {
+        cell.classList.add('bg-transport-blue', 'text-white', 'border-transport-blue');
+        small.textContent = 'Your seat';
+      } else {
+        cell.classList.add('bg-green-50', 'text-green-800', 'border-green-200');
+        small.textContent = 'Available';
+      }
+
+      cell.appendChild(label);
+      cell.appendChild(small);
+      container.appendChild(cell);
+    }
+  }
+
+  try {
+    const parsed = JSON.parse(rawBooked);
+    if (Array.isArray(parsed)) {
+      render(capacity, parsed, null);
+      return;
+    }
+  } catch (e) {
+    // fallthrough to fetch
+  }
+
+  // Fallback: fetch seat map JSON endpoint
+  const url = "{% url 'dashboard:trip-seat-map-json' %}?trip=" + encodeURIComponent(tripId);
+  fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+    .then(res => {
+      if (!res.ok) throw new Error('Failed to load seat map');
+      return res.json();
+    })
+    .then(data => {
+      const cap = data.capacity || capacity || 0;
+      const booked = Array.isArray(data.booked_seats) ? data.booked_seats.map(n => parseInt(n,10)) : [];
+      render(cap, booked, null);
+    })
+    .catch(err => {
+      container.innerHTML = '<div class="col-span-8 text-sm text-red-600 text-center py-6">Unable to load seat map.</div>';
+      console.error(err);
+    });
+})();
+</script>
+{% endblock %}
 {% endblock %}

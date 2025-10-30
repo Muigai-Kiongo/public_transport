@@ -129,3 +129,42 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = 'login'
+
+
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+
+# Hard-coded credentials (replace with your test account and app password)
+# Example:
+#   EMAIL_HOST_USER = "youremail@gmail.com"
+#   EMAIL_HOST_PASSWORD = "abcdefghijklmnop"   # 16-char app password (no spaces)
+EMAIL_HOST_USER = "kabochakiongo@gmail.com"
+EMAIL_HOST_PASSWORD = "qmtgccnmfxhtodnl"  # <- Replace with your 16-char Gmail app password (no spaces)
+
+# From header shown to recipients
+DEFAULT_FROM_EMAIL = f"Public Transport "
+
+# Helpful dev fallback: if you want to avoid SMTP during tests, uncomment:
+# EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+# Optional safety check (will warn on startup in DEBUG)
+if EMAIL_BACKEND == "django.core.mail.backends.smtp.EmailBackend":
+    if not EMAIL_HOST_USER or not EMAIL_HOST_PASSWORD:
+        if DEBUG:
+            print("WARNING: SMTP backend selected but EMAIL_HOST_USER/EMAIL_HOST_PASSWORD are not set.")
+        else:
+            raise ImproperlyConfigured("EMAIL_HOST_USER and EMAIL_HOST_PASSWORD must be set for SMTP backend")
+
+
+
+# Simple console logging for local development
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "root": {"handlers": ["console"], "level": "DEBUG"},
+    "loggers": {"django": {"handlers": ["console"], "level": "INFO"}, "finance": {"handlers": ["console"], "level": "DEBUG"}},
+}

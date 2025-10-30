@@ -1,14 +1,162 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="bg-white rounded-xl shadow p-6 max-w-lg mx-auto">
-    <h2 class="text-2xl font-bold mb-4">Vehicle Details</h2>
-    <ul class="mb-6">
-        <li><strong>Code:</strong> {{ vehicle.code }}</li>
-        <li><strong>Type:</strong> {{ vehicle.get_vehicle_type_display }}</li>
-        <li><strong>Capacity:</strong> {{ vehicle.capacity }}</li>
-        <li><strong>Active:</strong> {% if vehicle.active %}Yes{% else %}No{% endif %}</li>
-    </ul>
-    <a href="{% url 'dashboard:vehicle-edit' vehicle.pk %}" class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 mr-2">Edit Vehicle</a>
-    <a href="{% url 'dashboard:vehicle-list' %}" class="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400">Back to Vehicle List</a>
+<div class="bg-white rounded-xl shadow p-6 max-w-4xl mx-auto">
+  <div class="flex items-start gap-6">
+    <div class="flex-1">
+      <div class="flex items-center justify-between mb-4">
+        <div>
+          <h2 class="text-2xl font-bold text-transport-blue">Vehicle {{ vehicle.code }}</h2>
+          <p class="text-sm text-gray-500">Vehicle details and usage</p>
+        </div>
+
+        <div class="flex items-center gap-3">
+          {% if user.is_authenticated and user.is_staff %}
+            <a href="{% url 'dashboard:vehicle-edit' vehicle.pk %}" class="inline-block bg-yellow-500 text-white px-3 py-2 rounded hover:bg-yellow-600">Edit</a>
+
+            <form action="{% url 'dashboard:vehicle-delete' vehicle.pk %}" method="post" onsubmit="return confirm('Delete this vehicle? This action cannot be undone.');" class="inline">
+              {% csrf_token %}
+              <button type="submit" class="inline-block bg-red-600 text-white px-3 py-2 rounded hover:bg-red-700">Delete</button>
+            </form>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <div class="mb-4">
+            <h3 class="text-sm font-semibold text-gray-600">Summary</h3>
+            <ul class="mt-2 text-sm text-gray-800 space-y-1">
+              <li><strong>Code:</strong> <span class="font-mono">{{ vehicle.code }}</span></li>
+              <li><strong>Type:</strong> {{ vehicle.get_vehicle_type_display }}</li>
+              <li><strong>Capacity:</strong> {{ vehicle.capacity }}</li>
+              <li><strong>Active:</strong> {% if vehicle.active %}<span class="text-green-700 font-semibold">Yes</span>{% else %}<span class="text-red-700 font-semibold">No</span>{% endif %}</li>
+            </ul>
+          </div>
+
+          <div class="mb-4">
+            <h3 class="text-sm font-semibold text-gray-600">Assigned routes</h3>
+            <div class="mt-2 text-sm">
+              {% if vehicle.assigned_routes.exists %}
+                <ul class="space-y-1">
+                  {% for route in vehicle.assigned_routes.all %}
+                    <li>
+                      <a href="{% url 'dashboard:route-detail' route.pk %}" class="text-transport-blue hover:underline">
+                        {{ route.name }} <span class="text-xs text-gray-400">({{ route.code }})</span>
+                      </a>
+                    </li>
+                  {% endfor %}
+                </ul>
+              {% else %}
+                <div class="text-xs text-gray-500">No routes assigned.</div>
+              {% endif %}
+            </div>
+          </div>
+
+          <div>
+            <h3 class="text-sm font-semibold text-gray-600">Notes</h3>
+            <p class="text-xs text-gray-500 mt-2">
+              Capacity and active flag control booking behavior. When changing capacity, review trips that use this vehicle and adjust trip.available_seats accordingly.
+            </p>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="text-sm font-semibold text-gray-600 mb-2">Usage & Upcoming trips</h3>
+
+          {# Prefer upcoming_trips provided by the view; fall back to a light template fallback #}
+          {% if upcoming_trips is defined %}
+            {% if upcoming_trips %}
+              <ul class="space-y-2 text-sm">
+                {% for t in upcoming_trips %}
+                  <li class="p-3 bg-gray-50 rounded border">
+                    <div class="flex items-start justify-between">
+                      <div>
+                        <a href="{% url 'dashboard:trip-detail' t.pk %}" class="text-transport-blue font-medium hover:underline">
+                          {{ t.route.name }}
+                        </a>
+                        <div class="text-xs text-gray-500">{{ t.scheduled_departure|date:"Y-m-d H:i" }}</div>
+                      </div>
+                      <div class="text-right text-sm">
+                        <div class="font-semibold">{{ t.available_seats }}</div>
+                        <div class="text-xs text-gray-500">avail</div>
+                      </div>
+                    </div>
+                    <div class="mt-2 text-xs text-gray-500">
+                      {% if user.is_authenticated and not user.is_staff and t.available_seats > 0 %}
+                        <a href="{% url 'dashboard:booking-add' %}?trip={{ t.pk }}" class="inline-block bg-transport-blue text-white px-2 py-1 rounded text-xs">Book</a>
+                      {% endif %}
+                    </div>
+                  </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <div class="text-xs text-gray-500">No upcoming trips scheduled for this vehicle.</div>
+            {% endif %}
+          {% else %}
+            {# Fallback: show up to 5 trips from trip_set (simple, may cause extra DB queries) #}
+            {% with trips_list=vehicle.trip_set.all|slice:":5" %}
+              {% if trips_list %}
+                <ul class="space-y-2 text-sm">
+                  {% for t in trips_list %}
+                    <li class="p-3 bg-gray-50 rounded border">
+                      <div class="flex items-start justify-between">
+                        <div>
+                          <a href="{% url 'dashboard:trip-detail' t.pk %}" class="text-transport-blue font-medium hover:underline">
+                            {{ t.route.name }}
+                          </a>
+                          <div class="text-xs text-gray-500">{{ t.scheduled_departure|date:"Y-m-d H:i" }}</div>
+                        </div>
+                        <div class="text-right text-sm">
+                          <div class="font-semibold">{{ t.available_seats }}</div>
+                          <div class="text-xs text-gray-500">avail</div>
+                        </div>
+                      </div>
+                    </li>
+                  {% endfor %}
+                </ul>
+              {% else %}
+                <div class="text-xs text-gray-500">No trips found for this vehicle.</div>
+              {% endif %}
+            {% endwith %}
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <aside class="w-48 hidden md:block">
+      <div class="bg-gray-50 border border-gray-100 rounded-lg p-4 text-center">
+        <div class="mb-3">
+          <strong class="text-sm block text-gray-600">Stats</strong>
+          <div class="text-xs text-gray-500">Vehicle {{ vehicle.code }}</div>
+        </div>
+
+        <div class="text-sm text-gray-700 space-y-2">
+          <div>
+            <div class="text-xs text-gray-500">Capacity</div>
+            <div class="font-medium">{{ vehicle.capacity }}</div>
+          </div>
+
+          <div>
+            <div class="text-xs text-gray-500">Active</div>
+            <div class="font-medium">{% if vehicle.active %}Yes{% else %}No{% endif %}</div>
+          </div>
+
+          {% if total_trips is defined %}
+            <div>
+              <div class="text-xs text-gray-500">Total trips</div>
+              <div class="font-medium">{{ total_trips }}</div>
+            </div>
+          {% endif %}
+
+          {% if upcoming_count is defined %}
+            <div>
+              <div class="text-xs text-gray-500">Upcoming</div>
+              <div class="font-medium">{{ upcoming_count }}</div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </aside>
+  </div>
 </div>
 {% endblock %}

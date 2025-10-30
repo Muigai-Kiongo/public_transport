@@ -4,12 +4,14 @@
     <span class="text-3xl">🚍🚆</span>
     <h2 class="text-2xl font-bold text-transport-blue">Trips</h2>
 </div>
+
 <div class="bg-white rounded-xl shadow-lg p-6">
     {% if user.is_authenticated and user.is_staff %}
     <a href="{% url 'dashboard:trip-add' %}" class="mb-4 inline-block bg-transport-blue text-white px-4 py-2 rounded hover:bg-blue-700 transition font-semibold">
         <span class="mr-2">➕</span>Add Trip
     </a>
     {% endif %}
+
     <div class="overflow-x-auto mt-4">
         <table class="min-w-full divide-y divide-gray-200">
             <thead class="bg-gray-50">
@@ -18,26 +20,85 @@
                     <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700">Vehicle</th>
                     <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700">Departure</th>
                     <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700">Arrival</th>
-                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700">Available Seats</th>
+                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700">Seats</th>
                     <th class="px-4 py-2"></th>
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-100">
                 {% for trip in trips %}
-                <tr>
-                    <td class="px-4 py-2 font-semibold text-transport-blue">{{ trip.route.name }}</td>
-                    <td class="px-4 py-2 font-mono">{{ trip.vehicle.code }}</td>
-                    <td class="px-4 py-2">{{ trip.scheduled_departure|date:"Y-m-d H:i" }}</td>
-                    <td class="px-4 py-2">{{ trip.scheduled_arrival|date:"Y-m-d H:i" }}</td>
-                    <td class="px-4 py-2">{{ trip.available_seats }}</td>
-                    <td class="px-4 py-2 whitespace-nowrap">
+                <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3 font-semibold text-transport-blue">
+                        {{ trip.route.name }}
+                        <div class="text-xs text-gray-500 mt-1">{{ trip.route.code }}</div>
+                    </td>
+
+                    <td class="px-4 py-3 font-mono text-sm">
+                        {% if trip.vehicle %}
+                            {{ trip.vehicle.code }}
+                            <div class="text-xs text-gray-500 mt-1">{{ trip.vehicle.get_vehicle_type_display }}</div>
+                        {% else %}
+                            <span class="text-gray-400">Unassigned</span>
+                        {% endif %}
+                    </td>
+
+                    <td class="px-4 py-3 text-sm text-gray-700">
+                        {{ trip.scheduled_departure|date:"Y-m-d H:i" }}
+                    </td>
+                    <td class="px-4 py-3 text-sm text-gray-700">
+                        {{ trip.scheduled_arrival|date:"Y-m-d H:i" }}
+                    </td>
+
+                    <td class="px-4 py-3 w-56">
+                        {% if trip.vehicle %}
+                            <div class="flex items-center justify-between mb-1">
+                                <div class="text-sm text-gray-700">
+                                    <span class="font-medium">{{ trip.available_seats }}</span>
+                                    <span class="text-xs text-gray-500"> / {{ trip.vehicle.capacity }}</span>
+                                </div>
+                                {% if trip.available_seats == 0 %}
+                                    <span class="inline-block bg-red-100 text-red-700 text-xs px-2 py-1 rounded">Sold out</span>
+                                {% elif trip.available_seats <= 5 %}
+                                    <span class="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">Few left</span>
+                                {% else %}
+                                    <span class="inline-block bg-green-50 text-green-800 text-xs px-2 py-1 rounded">Available</span>
+                                {% endif %}
+                            </div>
+
+                            {# Progress bar showing available seats proportionally (uses widthratio) #}
+                            {% if trip.vehicle.capacity and trip.vehicle.capacity > 0 %}
+                                <div class="w-full bg-gray-100 rounded h-2 overflow-hidden">
+                                    <div
+                                        class="h-2 bg-transport-blue"
+                                        style="width: {% widthratio trip.available_seats trip.vehicle.capacity 100 %}%;"
+                                        role="progressbar"
+                                        aria-valuemin="0"
+                                        aria-valuemax="{{ trip.vehicle.capacity }}"
+                                        aria-valuenow="{{ trip.available_seats }}">
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="text-xs text-gray-500">Capacity not set</div>
+                            {% endif %}
+                        {% else %}
+                            <div class="text-xs text-gray-500">Vehicle not assigned</div>
+                        {% endif %}
+                    </td>
+
+                    <td class="px-4 py-3 whitespace-nowrap">
                         <a href="{% url 'dashboard:trip-detail' trip.pk %}" class="text-blue-600 hover:underline mr-2">View</a>
+
                         {% if user.is_authenticated and user.is_staff %}
                             <a href="{% url 'dashboard:trip-edit' trip.pk %}" class="text-yellow-600 hover:underline mr-2">Edit</a>
-                            <a href="{% url 'dashboard:trip-delete' trip.pk %}" class="text-red-600 hover:underline">Delete</a>
+                            <a href="{% url 'dashboard:trip-delete' trip.pk %}" class="text-red-600 hover:underline mr-2">Delete</a>
                         {% endif %}
+
                         {% if user.is_authenticated and not user.is_staff %}
-                            <a href="{% url 'dashboard:booking-add' %}?trip={{ trip.pk }}" class="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition font-semibold">Book</a>
+                            {# Pre-selects trip on booking page using query param. #}
+                            <a href="{% url 'dashboard:booking-add' %}?trip={{ trip.pk }}"
+                               class="inline-block bg-transport-blue text-white px-3 py-1 rounded hover:bg-blue-700 transition font-semibold"
+                               title="Book this trip (pre-selects trip)">
+                                Book
+                            </a>
                         {% endif %}
                     </td>
                 </tr>
@@ -50,4 +111,17 @@
         </table>
     </div>
 </div>
+
+{% block extra_js %}
+<script>
+  // small enhancement: confirm before allowing staff to delete a trip
+  document.addEventListener('click', function (e) {
+    const el = e.target.closest('a[href*="/trips/"][href$="/delete/"]');
+    if (!el) return;
+    if (!confirm('Delete this trip? This action cannot be undone.')) {
+      e.preventDefault();
+    }
+  });
+</script>
+{% endblock %}
 {% endblock %}

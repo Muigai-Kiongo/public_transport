@@ -1,31 +1,97 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="flex flex-col items-center mt-8 mb-8 px-2">
-    <div class="w-full max-w-lg bg-gray-50 dark:bg-gray-800 rounded-xl shadow-lg px-8 py-7 transition-all">
-        <h1 class="text-2xl font-bold mb-2 text-blue-600 dark:text-blue-300">User Profile</h1>
-        <h3 class="text-lg font-medium mb-5 text-gray-700 dark:text-gray-300">Your Information</h3>
-        <p class="mb-2 text-base text-gray-900 dark:text-gray-100"><strong>Username:</strong> {{ form.username.value }}</p>
-        <p class="mb-2 text-base text-gray-900 dark:text-gray-100"><strong>Email:</strong> {{ form.email.value }}</p>
-        <form method="post" class="mt-8 space-y-4">
-            {% csrf_token %}
-            <h2 class="text-lg font-semibold mb-2 text-blue-700 dark:text-blue-200">Edit Profile</h2>
-            {% if form.non_field_errors %}
-                <div class="text-red-600 dark:text-red-400 text-sm mb-2">{{ form.non_field_errors }}</div>
-            {% endif %}
-            {% for field in form %}
-                <div class="flex flex-col gap-1">
-                    <label for="{{ field.id_for_label }}" class="font-medium text-gray-700 dark:text-gray-300">{{ field.label }}</label>
-                    {{ field }}
-                    {% if field.errors %}
-                        <div class="text-red-600 dark:text-red-400 text-xs">{{ field.errors }}</div>
-                    {% endif %}
+<div class="flex flex-col items-center mt-8 mb-8 px-4">
+    <div class="w-full max-w-lg bg-white rounded-xl shadow-lg px-8 py-7 transition-all">
+        <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center gap-4">
+                <div class="w-14 h-14 rounded-full bg-transport-blue text-white flex items-center justify-center text-xl font-semibold">
+                    {{ user.username|slice:":1"|upper }}
                 </div>
-            {% endfor %}
-            <button type="submit"
-                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition">
-                Save Changes
-            </button>
-        </form>
+                <div>
+                    <h1 class="text-2xl font-bold text-transport-blue">{{ user.get_full_name|default:user.username }}</h1>
+                    <p class="text-sm text-gray-500">{{ user.email }}</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                {% if request.GET.edit or editing %}
+                    <a href="{% url 'profile' %}" class="inline-flex items-center gap-2 px-3 py-2 rounded border border-gray-200 text-sm hover:bg-gray-50">
+                        Cancel
+                    </a>
+                {% else %}
+                    <a href="{% url 'profile' %}?edit=1" class="inline-flex items-center gap-2 px-3 py-2 rounded bg-transport-blue text-white hover:bg-blue-700 text-sm">
+                        ✏️ Edit Profile
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if messages %}
+            <div class="mb-4">
+                {% for message in messages %}
+                    <div class="px-4 py-2 rounded mb-2 text-sm
+                        {% if message.tags %}{% if 'error' in message.tags %} bg-red-100 text-red-700 {% elif 'success' in message.tags %} bg-green-100 text-green-700 {% else %} bg-gray-100 text-gray-800 {% endif %}{% else %} bg-gray-100 text-gray-800 {% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% if not request.GET.edit and not editing %}
+            <div class="space-y-3">
+                <div>
+                    <h3 class="text-sm font-medium text-gray-600">Username</h3>
+                    <p class="text-base text-gray-900">{{ user.username }}</p>
+                </div>
+                <div>
+                    <h3 class="text-sm font-medium text-gray-600">Email</h3>
+                    <p class="text-base text-gray-900">{{ user.email|default:"—" }}</p>
+                </div>
+                {% if user.first_name or user.last_name %}
+                <div>
+                    <h3 class="text-sm font-medium text-gray-600">Name</h3>
+                    <p class="text-base text-gray-900">{{ user.get_full_name }}</p>
+                </div>
+                {% endif %}
+            </div>
+        {% else %}
+            <form method="post" class="mt-4 space-y-4">
+                {% csrf_token %}
+                <h2 class="text-lg font-semibold text-transport-blue">Edit Profile</h2>
+
+                {% if form.non_field_errors %}
+                    <div class="text-red-600 text-sm">{{ form.non_field_errors }}</div>
+                {% endif %}
+
+                {% for field in form %}
+                    <div>
+                        <label for="{{ field.id_for_label }}" class="block mb-1 text-sm font-medium text-gray-700">
+                            {{ field.label }}{% if field.field.required %}<span class="text-red-500">*</span>{% endif %}
+                        </label>
+
+                        {# Render the field using the default widget without injecting attributes or classes #}
+                        {{ field }}
+
+                        {% if field.help_text %}
+                            <p class="text-xs text-gray-500 mt-1">{{ field.help_text }}</p>
+                        {% endif %}
+
+                        {% if field.errors %}
+                            <p class="text-xs text-red-600 mt-1">{{ field.errors|striptags }}</p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+
+                <div class="flex gap-3 mt-2">
+                    <button type="submit" class="flex-1 bg-transport-blue hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition">
+                        Save Changes
+                    </button>
+                    <a href="{% url 'profile' %}" class="inline-flex items-center justify-center px-4 py-3 rounded-lg border border-gray-200 text-sm hover:bg-gray-50">
+                        Cancel
+                    </a>
+                </div>
+            </form>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

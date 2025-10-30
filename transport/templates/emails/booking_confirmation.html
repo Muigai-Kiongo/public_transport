@@ -1,0 +1,56 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Booking Confirmation — #{{ booking.pk }}</title>
+    <style>
+      body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; color: #111827; }
+      .card { max-width: 600px; margin: 0 auto; border-radius: 8px; overflow: hidden; border: 1px solid #e5e7eb; }
+      .header { background:#2563eb; color: #fff; padding: 20px; }
+      .content { padding: 20px; background: #ffffff; }
+      .meta { background:#f9fafb; padding:12px; border-radius:6px; margin:12px 0; font-size:14px; }
+      .list { margin: 10px 0 18px 0; padding-left: 18px; }
+      .footer { padding: 16px; font-size:13px; color:#6b7280; background:#fff; }
+      .badge { display:inline-block; padding:6px 10px; border-radius:999px; font-size:12px; color:#fff; }
+      .badge--confirmed { background:#16a34a; }
+      .badge--cancelled { background:#dc2626; }
+    </style>
+  </head>
+  <body>
+    <div class="card" role="article" aria-labelledby="title">
+      <div class="header">
+        <h1 id="title" style="margin:0; font-size:20px;">Booking confirmation — #{{ booking.pk }}</h1>
+      </div>
+      <div class="content">
+        <p>Hello <strong>{{ user.get_full_name|default:user.username }}</strong>,</p>
+
+        <p>Thank you — your booking has been successfully recorded. Below are the details:</p>
+
+        <div class="meta">
+          <strong>Booking ID:</strong> {{ booking.pk }}<br>
+          <strong>Route:</strong> {{ trip.route.name }}<br>
+          <strong>Vehicle:</strong> {{ trip.vehicle.code }}<br>
+          <strong>Departure:</strong> {{ trip.scheduled_departure|date:"Y-m-d H:i" }}<br>
+          <strong>Arrival:</strong> {{ trip.scheduled_arrival|date:"Y-m-d H:i" }}<br>
+          <strong>Status:</strong>
+          {% if booking.get_status_display %}
+            <span class="badge {% if booking.status == 'confirmed' %}badge--confirmed{% elif booking.status == 'cancelled' %}badge--cancelled{% endif %}">
+              {{ booking.get_status_display }}
+            </span>
+          {% else %}
+            <span>{{ booking.get_status_display }}</span>
+          {% endif %}
+        </div>
+
+        <p>If you need to view, change or cancel your booking, please sign in to the site and visit your bookings page. If you have any questions, reply to this email or contact support.</p>
+
+        <p>Safe travels,<br><strong>{{ site_name }}</strong></p>
+      </div>
+
+      <div class="footer">
+        <p style="margin:0;">This message was sent by {{ site_name }}. If you did not make this booking, please contact support immediately.</p>
+      </div>
+    </div>
+  </body>
+</html>

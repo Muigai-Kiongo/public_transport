@@ -1,13 +1,194 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="bg-white rounded-xl shadow p-6 max-w-lg mx-auto">
-    <h2 class="text-2xl font-bold mb-4">Booking Details</h2>
-    <ul class="mb-6">
-        <li><strong>Trip:</strong> {{ booking.trip.route.name }} ({{ booking.trip.scheduled_departure|date:"Y-m-d H:i" }})</li>
-        <li><strong>Booked At:</strong> {{ booking.booked_at|date:"Y-m-d H:i" }}</li>
-        <li><strong>Status:</strong> {{ booking.get_status_display }}</li>
-    </ul>
-    <a href="{% url 'dashboard:booking-edit' booking.pk %}" class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 mr-2">Edit Booking</a>
-    <a href="{% url 'dashboard:booking-list' %}" class="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400">Back to My Bookings</a>
+<div class="bg-white rounded-xl shadow p-6 max-w-3xl mx-auto">
+    <div class="flex items-start justify-between gap-6">
+        <div>
+            <h2 class="text-2xl font-bold mb-1 text-transport-blue">Booking Details</h2>
+            <p class="text-sm text-gray-500 mb-4">Booking #{{ booking.pk }}</p>
+
+            <ul class="mb-4 space-y-2 text-sm text-gray-800">
+                <li><strong>Route:</strong>
+                    <a href="{% url 'dashboard:route-detail' booking.trip.route.pk %}" class="text-transport-blue hover:underline">
+                        {{ booking.trip.route.name }}
+                    </a>
+                </li>
+                <li><strong>Trip:</strong>
+                    <a href="{% url 'dashboard:trip-detail' booking.trip.pk %}" class="text-transport-blue hover:underline">
+                        {{ booking.trip.route.name }} — {{ booking.trip.scheduled_departure|date:"Y-m-d H:i" }}
+                    </a>
+                </li>
+                <li><strong>Vehicle:</strong>
+                    {% if booking.trip.vehicle %}
+                        <a href="{% url 'dashboard:vehicle-detail' booking.trip.vehicle.pk %}" class="text-transport-blue hover:underline">
+                            {{ booking.trip.vehicle }} (Capacity: {{ booking.trip.vehicle.capacity }})
+                        </a>
+                    {% else %}
+                        <span>Unassigned</span>
+                    {% endif %}
+                </li>
+                <li><strong>Booked At:</strong> {{ booking.booked_at|date:"Y-m-d H:i" }}</li>
+                <li>
+                    <strong>Status:</strong>
+                    {% if booking.status == 'confirmed' %}
+                        <span class="inline-block bg-green-600 text-white px-2 py-1 rounded text-xs">Confirmed</span>
+                    {% elif booking.status == 'pending' %}
+                        <span class="inline-block bg-transport-yellow text-black px-2 py-1 rounded text-xs">Pending</span>
+                    {% else %}
+                        <span class="inline-block bg-red-600 text-white px-2 py-1 rounded text-xs">Cancelled</span>
+                    {% endif %}
+                </li>
+                <li>
+                    <strong>Seat:</strong>
+                    {% if booking.seat_number %}
+                        <span class="font-semibold text-transport-blue">#{{ booking.seat_number }}</span>
+                    {% else %}
+                        <span class="text-gray-500">TBD</span>
+                    {% endif %}
+                </li>
+            </ul>
+
+            <div class="flex flex-wrap gap-3">
+                {% if request.user == booking.user and booking.status != 'cancelled' %}
+                    <form action="{% url 'dashboard:booking-edit' booking.pk %}" method="post" onsubmit="return confirmCancel();" class="inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="status" value="cancelled">
+                        <button type="submit" class="inline-flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">
+                            Cancel Booking
+                        </button>
+                    </form>
+
+                    <a href="{% url 'dashboard:booking-edit' booking.pk %}" class="inline-flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded">
+                        Edit Booking
+                    </a>
+                {% endif %}
+
+                {% if request.user == booking.user %}
+                    <form action="{% url 'dashboard:booking-delete' booking.pk %}" method="post" onsubmit="return confirmDelete();" class="inline">
+                        {% csrf_token %}
+                        <button type="submit" class="inline-flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded">
+                            Delete Booking
+                        </button>
+                    </form>
+                {% endif %}
+
+                <button onclick="window.print()" class="inline-flex items-center gap-2 bg-transport-blue hover:bg-blue-700 text-white px-4 py-2 rounded">
+                    Print Ticket
+                </button>
+
+            </div>
+        </div>
+
+        <aside class="w-48 hidden md:block">
+            <div class="bg-gray-50 border border-gray-100 rounded-lg p-3 text-center">
+                <div class="mb-3">
+                    <strong class="text-sm block text-gray-600">Ticket</strong>
+                    <div class="text-xs text-gray-500">Booking #{{ booking.pk }}</div>
+                </div>
+
+                <img alt="QR code" class="mx-auto mb-3" src="https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl={{ 'Booking:#'|add:booking.pk|stringformat:'s'|urlencode }}%20%7C%20Trip:%20{{ booking.trip.pk }}%20%7C%20Depart:%20{{ booking.trip.scheduled_departure|date:'Y-m-d_H:i' }}" />
+
+                <div class="text-sm text-gray-700 mb-2">
+                    <div><strong>Seat</strong></div>
+                    <div class="mt-1">
+                        {% if booking.seat_number %}
+                            <span class="inline-block bg-transport-blue text-white px-3 py-1 rounded">#{{ booking.seat_number }}</span>
+                        {% else %}
+                            <span class="text-gray-400">Auto-assigned</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="text-xs text-gray-500">
+                    <div>Vehicle:</div>
+                    <div class="font-medium">
+                        {% if booking.trip.vehicle %}{{ booking.trip.vehicle.code }}{% else %}—{% endif %}
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Seat snapshot visualization (rendered client-side) -->
+    <div class="mt-6 bg-white border border-gray-100 rounded-lg p-4">
+        <h3 class="text-sm font-semibold text-gray-700 mb-2">Seat snapshot</h3>
+        <p class="text-xs text-gray-500 mb-3">This is a map of seats for the vehicle on this trip. Your seat is highlighted in blue.</p>
+
+        {# embed safe JSON in data attribute (booked_seats_json is provided by the view) #}
+        <div id="booking-seat-map"
+             class="grid gap-2 p-3 bg-gray-50 rounded"
+             data-capacity="{{ vehicle_capacity }}"
+             data-seat="{{ booking.seat_number|default:'' }}"
+             data-booked='{{ booked_seats_json|escapejs }}'>
+            <div class="text-xs text-gray-500">Loading seat map…</div>
+        </div>
+        <p class="text-xs text-gray-500 mt-2">If your seat shows as "Booked" but is yours, it will still be highlighted.</p>
+    </div>
 </div>
+
+{% block extra_js %}
+<script>
+(function () {
+  // Seat snapshot renderer for booking detail
+  const container = document.getElementById('booking-seat-map');
+  if (!container) return;
+
+  const capacity = parseInt(container.dataset.capacity || '0', 10);
+  const mySeat = container.dataset.seat ? parseInt(container.dataset.seat, 10) : null;
+
+  let booked = [];
+  try {
+    const raw = container.dataset.booked || '[]';
+    booked = JSON.parse(raw);
+    if (!Array.isArray(booked)) booked = [];
+  } catch (e) {
+    booked = [];
+  }
+
+  if (!capacity || capacity <= 0) {
+    container.innerHTML = '<div class="text-sm text-gray-500">No seat map available for this vehicle.</div>';
+    return;
+  }
+
+  const cols = Math.min(8, Math.max(4, Math.ceil(Math.sqrt(capacity))));
+  container.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
+  container.innerHTML = '';
+
+  for (let i = 1; i <= capacity; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'text-xs p-2 rounded border flex flex-col items-center justify-center';
+    cell.style.minHeight = '44px';
+
+    const label = document.createElement('div');
+    label.className = 'font-semibold';
+    label.textContent = '#' + i;
+
+    let statusText = 'Available';
+    if (booked.includes(i) && mySeat !== i) {
+      cell.classList.add('bg-red-50', 'text-red-700', 'border-red-200');
+      statusText = 'Booked';
+    } else if (mySeat === i) {
+      cell.classList.add('bg-transport-blue', 'text-white', 'border-transport-blue');
+      statusText = 'Your seat';
+    } else {
+      cell.classList.add('bg-green-50', 'text-green-800', 'border-green-200');
+    }
+
+    const small = document.createElement('div');
+    small.className = 'text-[10px] mt-1';
+    small.textContent = statusText;
+
+    cell.appendChild(label);
+    cell.appendChild(small);
+    container.appendChild(cell);
+  }
+})();
+
+function confirmCancel() {
+    return confirm('Are you sure you want to cancel this booking? This will release your seat and may be irreversible.');
+}
+function confirmDelete() {
+    return confirm('Delete this booking permanently? This will remove the booking record and release the seat.');
+}
+</script>
+{% endblock %}
 {% endblock %}

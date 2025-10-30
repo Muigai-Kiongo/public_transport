@@ -1,62 +1,120 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="flex items-center gap-2 mb-6">
-    <span class="text-3xl">🚗🚍🚆</span>
-    <h2 class="text-2xl font-bold text-transport-blue">Vehicles</h2>
+  <span class="text-3xl">🚗🚍🚆</span>
+  <h2 class="text-2xl font-bold text-transport-blue">Vehicles</h2>
 </div>
+
 <div class="bg-white rounded-xl shadow-lg p-6">
+  <div class="flex items-center justify-between mb-4 gap-4">
     {% if user.is_authenticated and user.is_staff %}
-    <a href="{% url 'dashboard:vehicle-add' %}" class="mb-4 inline-block bg-transport-blue text-white px-4 py-2 rounded hover:bg-blue-700 transition font-semibold">
-        <span class="mr-2">➕</span>Add Vehicle
-    </a>
+      <a href="{% url 'dashboard:vehicle-add' %}" class="inline-block bg-transport-blue text-white px-4 py-2 rounded hover:bg-blue-700 transition font-semibold">
+        ➕ Add Vehicle
+      </a>
     {% endif %}
-    <div class="overflow-x-auto mt-4">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700">Code</th>
-                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700">Type</th>
-                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700">Capacity</th>
-                    <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700">Active</th>
-                    <th class="px-4 py-2"></th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-100">
-                {% for vehicle in vehicles %}
-                <tr>
-                    <td class="px-4 py-2 font-mono">{{ vehicle.code }}</td>
-                    <td class="px-4 py-2">
-                        {% if vehicle.vehicle_type == "bus" %}
-                            <span class="inline-block bg-transport-yellow text-black px-2 py-1 rounded text-xs font-semibold">🚌 Bus</span>
-                        {% elif vehicle.vehicle_type == "train" %}
-                            <span class="inline-block bg-transport-green text-white px-2 py-1 rounded text-xs font-semibold">🚆 Train</span>
-                        {% else %}
-                            {{ vehicle.get_vehicle_type_display }}
-                        {% endif %}
-                    </td>
-                    <td class="px-4 py-2">{{ vehicle.capacity }}</td>
-                    <td class="px-4 py-2">
-                        {% if vehicle.active %}
-                            <span class="inline-block bg-green-600 text-white px-2 py-1 rounded text-xs">Yes</span>
-                        {% else %}
-                            <span class="inline-block bg-red-600 text-white px-2 py-1 rounded text-xs">No</span>
-                        {% endif %}
-                    </td>
-                    <td class="px-4 py-2 whitespace-nowrap">
-                        <a href="{% url 'dashboard:vehicle-detail' vehicle.pk %}" class="text-blue-600 hover:underline mr-2">View</a>
-                        {% if user.is_authenticated and user.is_staff %}
-                            <a href="{% url 'dashboard:vehicle-edit' vehicle.pk %}" class="text-yellow-600 hover:underline mr-2">Edit</a>
-                            <a href="{% url 'dashboard:vehicle-delete' vehicle.pk %}" class="text-red-600 hover:underline">Delete</a>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="5" class="px-4 py-4 text-center text-gray-500">No vehicles found.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+
+    <div class="flex items-center gap-3">
+      {# optional client-side search box (no JS behaviour provided) #}
+      <input
+        type="search"
+        name="q"
+        placeholder="Search code or type..."
+        class="px-3 py-2 border rounded text-sm focus:outline-none focus:ring-2 focus:ring-transport-blue"
+        aria-label="Search vehicles"
+      >
+      {% if is_paginated %}
+        <div class="text-sm text-gray-600">Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</div>
+      {% endif %}
     </div>
+  </div>
+
+  <div class="overflow-x-auto mt-2">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700">Code</th>
+          <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700">Type</th>
+          <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700">Capacity</th>
+          <th class="px-4 py-2 text-left text-xs font-semibold text-gray-700">Active</th>
+          <th class="px-4 py-2"></th>
+        </tr>
+      </thead>
+
+      <tbody class="bg-white divide-y divide-gray-100">
+        {% for vehicle in vehicles %}
+        <tr class="hover:bg-gray-50">
+          <td class="px-4 py-3 font-mono text-sm">
+            <a href="{% url 'dashboard:vehicle-detail' vehicle.pk %}" class="text-transport-blue hover:underline">{{ vehicle.code }}</a>
+          </td>
+
+          <td class="px-4 py-3 text-sm">
+            {% if vehicle.vehicle_type == "bus" %}
+              <span class="inline-flex items-center gap-2 bg-transport-yellow text-black px-2 py-1 rounded text-xs font-semibold">🚌 Bus</span>
+            {% elif vehicle.vehicle_type == "train" %}
+              <span class="inline-flex items-center gap-2 bg-transport-green text-white px-2 py-1 rounded text-xs font-semibold">🚆 Train</span>
+            {% else %}
+              <span class="inline-block bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs">{{ vehicle.get_vehicle_type_display }}</span>
+            {% endif %}
+          </td>
+
+          <td class="px-4 py-3 text-sm">
+            {% if vehicle.capacity %}
+              {{ vehicle.capacity }}
+            {% else %}
+              <span class="text-xs text-gray-400">Not set</span>
+            {% endif %}
+          </td>
+
+          <td class="px-4 py-3 text-sm">
+            {% if vehicle.active %}
+              <span class="inline-block bg-green-600 text-white px-2 py-1 rounded text-xs">Yes</span>
+            {% else %}
+              <span class="inline-block bg-red-600 text-white px-2 py-1 rounded text-xs">No</span>
+            {% endif %}
+          </td>
+
+          <td class="px-4 py-3 text-sm whitespace-nowrap">
+            <a href="{% url 'dashboard:vehicle-detail' vehicle.pk %}" class="text-blue-600 hover:underline mr-3">View</a>
+
+            {% if user.is_authenticated and user.is_staff %}
+              <a href="{% url 'dashboard:vehicle-edit' vehicle.pk %}" class="text-yellow-600 hover:underline mr-3">Edit</a>
+              <a href="{% url 'dashboard:vehicle-delete' vehicle.pk %}" class="text-red-600 hover:underline" data-confirm="Delete this vehicle?">Delete</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" class="px-4 py-6 text-center text-gray-500">No vehicles found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if is_paginated %}
+  <div class="mt-4 flex items-center justify-between">
+    <div class="text-sm text-gray-600">Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }}</div>
+    <div class="flex items-center gap-2">
+      {% if page_obj.has_previous %}
+        <a href="?page={{ page_obj.previous_page_number }}" class="px-3 py-1 border rounded text-sm hover:bg-gray-100">Previous</a>
+      {% endif %}
+      {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}" class="px-3 py-1 border rounded text-sm hover:bg-gray-100">Next</a>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
 </div>
+
+{% block extra_js %}
+<script>
+  // Confirm delete actions (delegated)
+  document.addEventListener('click', function (e) {
+    const el = e.target.closest('a[data-confirm]');
+    if (!el) return;
+    const msg = el.getAttribute('data-confirm') || 'Are you sure?';
+    if (!confirm(msg)) e.preventDefault();
+  });
+</script>
+{% endblock %}
 {% endblock %}

@@ -40,28 +40,57 @@
             <a class="font-bold text-2xl tracking-wide font-display mr-8 hover:text-transport-yellow transition" href="{% url 'dashboard:dashboard' %}">
                 Transport Dashboard
             </a>
+
             {% if user.is_authenticated and user.is_staff %}
                 <a href="{% url 'dashboard:analytics' %}" class="ml-4 hover:text-transport-yellow font-semibold transition">Analytics</a>
             {% endif %}
         </div>
-        <div>
-            <ul class="flex space-x-4 items-center">
-                {% if user.is_authenticated %}
-                    <li>
-                        <span class="text-transport-yellow font-semibold tracking-wide">Hello, {{ user.username }}</span>
-                    </li>
-                    <li>
-                        <form action="{% url 'logout' %}" method="post">
-                            {% csrf_token %}
-                            <button type="submit" class="hover:text-transport-yellow font-semibold transition">Logout</button>
-                        </form>
-                    </li>
-                {% else %}
-                    <li>
-                        <a href="{% url 'login' %}" class="hover:text-transport-yellow font-semibold transition">Login</a>
-                    </li>
-                {% endif %}
-            </ul>
+
+        <!-- Right: user actions -->
+        <div class="flex items-center space-x-4">
+            {% if user.is_authenticated %}
+                <div class="hidden sm:flex items-center space-x-3">
+                    <div class="text-sm text-transport-yellow font-semibold">Hello, {{ user.get_full_name|default:user.username }}</div>
+
+                    <!-- Profile / quick actions -->
+                    <div class="relative" x-data>
+                        <!-- Avatar button -->
+                        <button id="profile-menu-button" aria-haspopup="true" aria-expanded="false" class="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-3 py-1 rounded-full focus:outline-none">
+                            <span class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center font-semibold text-white">
+                                {{ user.username|slice:":1"|upper }}
+                            </span>
+                            <span class="text-sm hidden md:inline">{{ user.username }}</span>
+                        </button>
+
+                        <!-- Menu (simple accessible dropdown) -->
+                        <div id="profile-menu" class="absolute right-0 mt-2 w-48 bg-white text-gray-800 rounded shadow-lg ring-1 ring-black ring-opacity-5 hidden">
+                            <a href="{% url 'profile' %}" class="block px-4 py-2 hover:bg-gray-100">View Profile</a>
+                            <a href="{% url 'profile' %}?edit=1" class="block px-4 py-2 hover:bg-gray-100">Edit Profile</a>
+                            <a href="{% url 'dashboard:booking-list' %}" class="block px-4 py-2 hover:bg-gray-100">My Bookings</a>
+                            {% if user.is_staff %}
+                                <a href="{% url 'dashboard:feedback-list' %}" class="block px-4 py-2 hover:bg-gray-100">Manage Feedback</a>
+                            {% endif %}
+                            <div class="border-t my-1"></div>
+                            <form action="{% url 'logout' %}" method="post" class="m-0">
+                                {% csrf_token %}
+                                <button type="submit" class="w-full text-left px-4 py-2 hover:bg-gray-100">Logout</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mobile: show compact logout/login -->
+                <div class="sm:hidden">
+                    <form action="{% url 'logout' %}" method="post" class="m-0">
+                        {% csrf_token %}
+                        <button type="submit" class="hover:text-transport-yellow font-semibold transition">Logout</button>
+                    </form>
+                </div>
+            {% else %}
+                <div>
+                    <a href="{% url 'login' %}" class="hover:text-transport-yellow font-semibold transition">Login</a>
+                </div>
+            {% endif %}
         </div>
     </nav>
 
@@ -70,6 +99,22 @@
         <div class="flex items-center px-6 py-4 bg-transport-blue text-transport-yellow font-display text-lg tracking-wide">
             <span class="mr-2">🚌</span> Public Transport
         </div>
+
+        <!-- Optional profile quick card -->
+        {% if user.is_authenticated %}
+        <div class="px-4 py-3 border-b">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-transport-blue text-white flex items-center justify-center font-semibold">
+                    {{ user.username|slice:":1"|upper }}
+                </div>
+                <div>
+                    <div class="text-sm font-semibold text-gray-800">{{ user.get_full_name|default:user.username }}</div>
+                    <a href="{% url 'profile' %}" class="text-xs text-gray-500 hover:underline">View profile</a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
         <a href="{% url 'dashboard:dashboard' %}" class="py-3 px-6 hover:bg-transport-blue hover:text-white border-b font-medium transition">Dashboard</a>
         <a href="{% url 'dashboard:vehicle-list' %}" class="py-3 px-6 hover:bg-transport-blue hover:text-white border-b font-medium transition">Vehicles</a>
         <a href="{% url 'dashboard:route-list' %}" class="py-3 px-6 hover:bg-transport-blue hover:text-white border-b font-medium transition">Routes</a>
@@ -79,6 +124,7 @@
         {% if user.is_authenticated and not user.is_staff %}
             <!-- Passenger Dashboard -->
             <a href="{% url 'dashboard:booking-list' %}" class="py-3 px-6 hover:bg-transport-blue hover:text-white border-b font-medium transition">My Bookings</a>
+            <a href="{% url 'profile' %}" class="py-3 px-6 hover:bg-transport-blue hover:text-white border-b font-medium transition">My Profile</a>
         {% endif %}
         
         {% if user.is_authenticated and user.is_staff %}
@@ -87,7 +133,9 @@
             <a href="{% url 'dashboard:trip-add' %}" class="py-3 px-6 hover:bg-transport-blue hover:text-white border-b font-medium transition">Add Trip</a>
             <a href="{% url 'dashboard:route-add' %}" class="py-3 px-6 hover:bg-transport-blue hover:text-white border-b font-medium transition">Add Route</a>
             <a href="{% url 'dashboard:feedback-list' %}" class="py-3 px-6 hover:bg-transport-blue hover:text-white border-b font-medium transition">Manage Feedback</a>
+            <a href="{% url 'profile' %}" class="py-3 px-6 hover:bg-transport-blue hover:text-white border-b font-medium transition">My Profile</a>
         {% endif %}
+
         <div class="mt-auto px-6 py-3 text-xs text-gray-400">
             <span class="mr-2">🚏</span> Powered by Django & Tailwind
         </div>
@@ -100,6 +148,50 @@
             {% endblock %}
         </div>
     </main>
-    {% block extra_js %}{% endblock %}
+
+    {% block extra_js %}
+    <script>
+    // Simple dropdown toggle for profile menu
+    (function () {
+        const btn = document.getElementById('profile-menu-button');
+        const menu = document.getElementById('profile-menu');
+        if (!btn || !menu) return;
+
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            const isHidden = menu.classList.contains('hidden');
+            // hide all other menus if any
+            document.querySelectorAll('#profile-menu').forEach(m => m.classList.add('hidden'));
+            if (isHidden) {
+                menu.classList.remove('hidden');
+                btn.setAttribute('aria-expanded', 'true');
+            } else {
+                menu.classList.add('hidden');
+                btn.setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        // Close on outside click
+        document.addEventListener('click', function (e) {
+            if (!btn.contains(e.target) && !menu.contains(e.target)) {
+                if (!menu.classList.contains('hidden')) {
+                    menu.classList.add('hidden');
+                    btn.setAttribute('aria-expanded', 'false');
+                }
+            }
+        });
+
+        // Close on ESC
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                if (!menu.classList.contains('hidden')) {
+                    menu.classList.add('hidden');
+                    btn.setAttribute('aria-expanded', 'false');
+                }
+            }
+        });
+    })();
+    </script>
+    {% endblock %}
 </body>
 </html>

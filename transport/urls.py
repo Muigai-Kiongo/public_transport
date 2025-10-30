@@ -5,7 +5,7 @@ from .views import (
     VehicleListView, VehicleDetailView, VehicleCreateView, VehicleUpdateView, VehicleDeleteView,
     TripListView, TripDetailView, TripCreateView, TripUpdateView, TripDeleteView,
     RouteListView, RouteDetailView, RouteCreateView, RouteUpdateView, RouteDeleteView,
-    BookingListView, BookingDetailView, BookingCreateView, BookingUpdateView, BookingDeleteView,
+    BookingListView, BookingDetailView, BookingCreateView, BookingUpdateView, BookingDeleteView,trip_seat_map_json,
 )
 
 app_name = 'dashboard'
@@ -49,4 +49,6 @@ urlpatterns = [
     path('bookings/add/', BookingCreateView.as_view(), name='booking-add'),       # passenger only
     path('bookings/<int:pk>/edit/', BookingUpdateView.as_view(), name='booking-edit'), # passenger only
     path('bookings/<int:pk>/delete/', BookingDeleteView.as_view(), name='booking-delete'), # passenger only
+
+    path('trips/seat-map/', trip_seat_map_json, name='trip-seat-map-json'),
 ]

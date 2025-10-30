@@ -1,0 +1,21 @@
+Booking confirmation — #{{ booking.pk }}
+
+Hello {{ user.get_full_name|default:user.username }},
+
+Thank you — your booking has been confirmed.
+
+Booking details
+---------------
+Booking ID: {{ booking.pk }}
+Route: {{ trip.route.name }}
+Vehicle: {{ trip.vehicle.code }}
+Departure: {{ trip.scheduled_departure|date:"Y-m-d H:i" }}
+Arrival: {{ trip.scheduled_arrival|date:"Y-m-d H:i" }}
+Status: {{ booking.get_status_display }}
+
+Notes:
+- If you need to change or cancel your booking, please sign in and visit your bookings page.
+- This email was sent by {{ site_name }}.
+
+Safe travels,
+{{ site_name }}

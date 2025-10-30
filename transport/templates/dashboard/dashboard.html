@@ -2,8 +2,9 @@
 {% block content %}
 <div class="flex items-center mb-6 gap-2">
     <span class="text-3xl">🚍</span>
-    <h2 class="text-2xl font-bold text-transport-blue">Live Trips & Routes</h2>
+    <h2 class="text-2xl font-bold text-transport-blue">Live Trips &amp; Routes</h2>
 </div>
+
 <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
     <!-- Left: Trips Table -->
     <div class="md:col-span-2">
@@ -24,13 +25,25 @@
                 <tbody class="bg-white divide-y divide-gray-100">
                     {% for trip in trips %}
                     <tr>
-                        <td class="px-4 py-2">{{ trip.route.name }}</td>
-                        <td class="px-4 py-2">{{ trip.vehicle.code }}</td>
+                        <td class="px-4 py-2">
+                            {{ trip.route.name }}
+                            {% if trip.route.code %}<div class="text-xs text-gray-500">{{ trip.route.code }}</div>{% endif %}
+                        </td>
+
+                        <td class="px-4 py-2">
+                            {% if trip.vehicle %}
+                                {{ trip.vehicle.code }}
+                            {% else %}
+                                <span class="text-xs text-gray-400">Unassigned</span>
+                            {% endif %}
+                        </td>
+
                         <td class="px-4 py-2">{{ trip.scheduled_departure|date:"Y-m-d H:i" }}</td>
                         <td class="px-4 py-2">{{ trip.scheduled_arrival|date:"Y-m-d H:i" }}</td>
+
                         <td class="px-4 py-2">
                             {% if trip.actual_arrival %}
-                                {% if trip.actual_arrival > trip.scheduled_arrival %}
+                                {% if trip.scheduled_arrival and trip.actual_arrival > trip.scheduled_arrival %}
                                     <span class="inline-block px-2 py-1 rounded bg-red-600 text-white text-xs">Delayed</span>
                                 {% else %}
                                     <span class="inline-block px-2 py-1 rounded bg-green-600 text-white text-xs">On time</span>
@@ -39,10 +52,15 @@
                                 <span class="inline-block px-2 py-1 rounded bg-yellow-400 text-black text-xs">In Progress</span>
                             {% endif %}
                         </td>
+
                         {% if user.is_authenticated and not user.is_staff %}
                         <td class="px-4 py-2 whitespace-nowrap">
                             <a href="{% url 'dashboard:trip-detail' trip.pk %}" class="text-blue-600 hover:underline mr-2">Details</a>
-                            <a href="{% url 'dashboard:booking-add' %}?trip={{ trip.pk }}" class="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition font-semibold">Book</a>
+                            {% if trip.available_seats|default:0 > 0 %}
+                                <a href="{% url 'dashboard:booking-add' %}?trip={{ trip.pk }}" class="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition font-semibold">Book</a>
+                            {% else %}
+                                <span class="text-xs text-gray-500">Sold out</span>
+                            {% endif %}
                         </td>
                         {% endif %}
                     </tr>
@@ -55,6 +73,7 @@
             </table>
         </div>
     </div>
+
     <!-- Right: Feedback -->
     <div>
         <div class="bg-white rounded shadow p-4">
@@ -62,15 +81,18 @@
                 <span class="text-xl">🎫</span>
                 <h4 class="text-lg font-semibold text-transport-blue">Submit Feedback</h4>
             </div>
+
             <a class="inline-block mb-3 px-4 py-2 bg-transport-blue text-white rounded hover:bg-blue-700 transition" href="{% url 'dashboard:feedback-create' %}">
                 Report Issue / Feedback
             </a>
+
             <div class="border-t border-gray-200 my-3"></div>
+
             <h5 class="font-semibold mb-2 text-gray-700">Recent Feedback</h5>
             <ul>
                 {% for fb in feedbacks %}
                 <li class="mb-4 border-b pb-2">
-                    <span class="font-bold px-2 py-1 rounded 
+                    <span class="font-bold px-2 py-1 rounded
                         {% if fb.category == 'delay' %}bg-red-100 text-red-700
                         {% elif fb.category == 'comfort' %}bg-green-100 text-green-700
                         {% elif fb.category == 'cleanliness' %}bg-yellow-100 text-yellow-800
@@ -78,8 +100,14 @@
                     ">
                         {{ fb.get_category_display }}
                     </span>
-                    {% if fb.route %} on <span class="text-gray-800">{{ fb.route.name }}</span>{% endif %}
+
+                    {% if fb.route %}
+                        <span class="text-sm text-gray-600"> on </span>
+                        <span class="text-gray-800 font-medium">{{ fb.route.name }}</span>
+                    {% endif %}
+
                     <div class="text-gray-700 mt-1 text-sm">{{ fb.description|truncatechars:80 }}</div>
+
                     <small class="block text-gray-400 mt-1">
                         By
                         {% if fb.user %}
